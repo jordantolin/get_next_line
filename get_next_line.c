@@ -16,7 +16,6 @@
 #include <stdio.h>
 
 
-
 char	*get_next_line(int fd)
 {
 	int		ret;
@@ -50,11 +49,38 @@ char	*get_next_line(int fd)
 			line = tmp;
 		}
 
-		if (ret == 0 || ft_strchr(buffer, '\n'))
+		// Check for newline in buffer
+		char *newline_pos = ft_strchr(buffer, '\n');
+
+		// If a newline is found, move the file descriptor to the beginning of the next line
+		if (newline_pos != NULL)
+		{
+			// Include the newline character in the line
+			size_t line_length = newline_pos - buffer + 1;
+
+			// Check if the line is empty or not
+			if (line_length > 1)
+			{
+				char *tmp = ft_substr(line, 0, ft_strlen(line) - 1);
+				free(line);
+				line = tmp;
+			}
+
+			lseek(fd, line_length - ret, SEEK_CUR);
 			break;
+		}
+
+		// Check for consecutive newlines
+		if (ret == 0 && ft_strchr(line, '\n') == NULL)
+		{
+			// Check if the line is empty or not
+			if (line[0] != '\0')
+				break;
+		}
 	}
 
-	if (ret == 0 && line && line[0] == '\0')
+	// Check if the end of the file is reached without reading data
+	if (ret == 0 && (line == NULL || line[0] == '\0'))
 	{
 		free(line);
 		return (NULL);

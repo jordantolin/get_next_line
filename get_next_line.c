@@ -12,94 +12,42 @@
 
 #include "get_next_line.h"
 #include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
 
+char	*ft_read_str(int fd, char *str)
+{
+	char	*buff;
+	int		read_bytes;
+
+	buff = malloc((BUFFER_SIZE + 1) * sizeof(char));
+	if (!buff)
+		return (NULL);
+	read_bytes = 1;
+	while (!ft_strchr(str, '\n') && read_bytes != 0)
+	{
+		read_bytes = read(fd, buff, BUFFER_SIZE);
+		if (read_bytes == -1)
+		{
+			free(buff);
+			return (NULL);
+		}
+		buff[read_bytes] = '\0';
+		str = ft_strjoin(str, buff);
+	}
+	free(buff);
+	return (str);
+}
 
 char	*get_next_line(int fd)
 {
-	int		ret;
-	char	*line;
-	char	buffer[BUFFER_SIZE + 1];
-
-	ret = 1;
-	line = NULL;
+	char		*line;
+	static char	*str;
 
 	if (fd < 0 || BUFFER_SIZE <= 0)
+		return (0);
+	str = ft_read_str(fd, str);
+	if (!str)
 		return (NULL);
-
-	while (ret > 0)
-	{
-		ret = read(fd, buffer, BUFFER_SIZE);
-
-		if (ret == -1)
-		{
-			free(line);
-			return (NULL);
-		}
-
-		buffer[ret] = '\0';
-
-		if (line == NULL)
-			line = ft_strdup(buffer);
-		else
-		{
-			char *tmp = ft_strjoin(line, buffer);
-			free(line);
-			line = tmp;
-		}
-
-		// Check for newline in buffer
-		char *newline_pos = ft_strchr(buffer, '\n');
-
-		// If a newline is found, move the file descriptor to the beginning of the next line
-		if (newline_pos != NULL)
-		{
-			// Include the newline character in the line
-			size_t line_length = newline_pos - buffer + 1;
-
-			// Check if the line is empty or not
-			if (line_length > 1)
-			{
-				char *tmp = ft_substr(line, 0, ft_strlen(line) - 1);
-				free(line);
-				line = tmp;
-			}
-
-			lseek(fd, line_length - ret, SEEK_CUR);
-			break;
-		}
-
-		// Check for consecutive newlines
-		if (ret == 0 && ft_strchr(line, '\n') == NULL)
-		{
-			// Check if the line is empty or not
-			if (line[0] != '\0')
-				break;
-		}
-	}
-
-	// Check if the end of the file is reached without reading data
-	if (ret == 0 && (line == NULL || line[0] == '\0'))
-	{
-		free(line);
-		return (NULL);
-	}
-
+	line = ft_get_line(str);
+	str = ft_new_str(str);
 	return (line);
 }
-
-/*int main (int ac, char **av)
-{
-	int fd;
-	char *line;
-
-	if (ac == 2)
-	{
-		fd = open(av[1], O_RDONLY);
-		line = get_next_line(fd);
-			printf("%s\n", line);
-	}
-	return (0);
-}
-*/
